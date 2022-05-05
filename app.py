@@ -1,0 +1,124 @@
+# PYTHON IMPLEMENTATION CODE :
+from flask import Flask, render_template, request
+import cv2
+import numpy as np
+from pyzbar.pyzbar import decode
+import face_recognition
+import os
+from datetime import datetime
+
+app = Flask(__name__) 
+
+@app.route("/", methods=['GET','POST'])
+def hello_world():
+    request_type=request.method
+    if request_type=='GET':
+        return render_template('index.html')
+        
+    else:
+
+        with open('myDataFile') as f:
+            myDataList = f.read().splitlines()
+
+        path = 'ImagesAttendance'
+        images = []
+        classNames = []
+        myList = os.listdir(path)
+        #print(myList)
+        for cl in myList:
+            curImg = cv2.imread(f'{path}/{cl}')
+            images.append(curImg)
+            classNames.append(os.path.splitext(cl)[0])
+        print(classNames)
+
+
+        def findEncodings(images):
+            encodeList = []
+            for img in images:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                encode = face_recognition.face_encodings(img)[0]
+                encodeList.append(encode)
+            return encodeList
+
+        def markAttendance(name):
+            with open('static/Attendance.csv', 'r+') as f:
+                myDataList = f.readlines()
+
+                nameList = []
+                for line in myDataList:
+                    entry = line.split(',')
+                    nameList.append(entry[0])
+                if name not in nameList:
+                    now = datetime.now()
+                    dtString = now.strftime('%H:%M:%S')
+                    f.writelines(f'\n{name},{dtString}')
+
+        encodeListKnown = findEncodings(images)
+        print('Encoding Complete')
+
+        cap = cv2.VideoCapture(0)
+        bool = True
+
+        while True:
+            success, img = cap.read()
+            # img = captureScreen()
+            imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
+            imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
+
+            facesCurFrame = face_recognition.face_locations(imgS)
+            encodesCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
+
+            for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
+                matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
+                faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
+                # print(faceDis)
+                matchIndex = np.argmin(faceDis)
+
+                if matches[matchIndex]:
+                    name = classNames[matchIndex].upper()
+                    # print(name)
+                    y1, x2, y2, x1 = faceLoc
+                    y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
+                    cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+                    #markAttendance(name)
+
+            #cv2.imshow('Webcam', img)
+
+            for barcode in decode(img):
+                # print(barcode.data)
+                myData = barcode.data.decode('utf-8')
+                myData1=myData.split()
+
+                if bool == True :
+                    print(myData1)
+                    bool = False
+                #print(myData1)
+                # print(barcode.rect)
+
+                if myData1[-1] in myDataList:
+                    name1 = myData1[-1]
+                    myOutput = 'Authorized'
+                    myColor = (0,255,0)
+                else:
+                    myOutput = 'Un-Authorized'
+                    myColor = (0,0,255)
+
+                pts = np.array([barcode.polygon],np.int32)
+                pts = pts.reshape((-1,1,2))
+                cv2.polylines(img,[pts],True,myColor,3)
+                pts2 = barcode.rect
+                cv2.putText(img,myOutput,(pts2[0],pts2[1]),cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5,(255,0,255),2)
+
+                if name == name1 :
+                    markAttendance(name)
+
+            cv2.imshow('Webcam', img)
+            #cv2.imshow('Result',img)
+            cv2.waitKey(1)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                return render_template('index.html')
+            
