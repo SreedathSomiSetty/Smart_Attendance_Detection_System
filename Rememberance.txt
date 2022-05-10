@@ -1,0 +1,10 @@
+https://devcenter.heroku.com/articles/container-registry-and-runtime
+https://www.youtube.com/watch?v=tTwGdUTR5h8 : DOCKER DEPLOY ON HEROKU
+https://www.youtube.com/watch?v=EIHY_CY5J0k : PUSH & PULL A DOCKER IMAGE
+https://pythonise.com/series/learning-flask/building-a-flask-app-with-docker-compose#the-flask-app
+https://www.youtube.com/watch?v=WQeoO7MI0Bs : MUSTAFA'S OPEN-CV 3HRS FULL VIDEO
+https://medium.com/hackernoon/face-recognition-service-with-python-dlib-flask-ca33d335fa26
+https://towardsdatascience.com/interactive-face-recognition-application-through-docker-85e86ad0ffa6
+https://www.prepostseo.com/paraphrasing-tool : PARAPHRASE
+https://spinbot.com/paraphrasing-tool : SPINBOT
+https://labs.play-with-docker.com/
